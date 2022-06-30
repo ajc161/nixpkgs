@@ -4,7 +4,7 @@ with lib;
 
 let
   cfg = config.services.blocky;
-
+  blocky = pkgs.blocky;
   format = pkgs.formats.yaml { };
   configFile = format.generate "config.yaml" cfg.settings;
 in
@@ -26,12 +26,15 @@ in
   config = mkIf cfg.enable {
     systemd.services.blocky = {
       description = "A DNS proxy and ad-blocker for the local network";
+      wants = [ "network-online.target" ];
+      after = [ "network-online.target" ];
       wantedBy = [ "multi-user.target" ];
+      path = [ blocky ];
 
       serviceConfig = {
         DynamicUser = true;
-        ExecStart = "${pkgs.blocky}/bin/blocky --config ${configFile}";
-
+        ExecStart = "${blocky}/bin/blocky --config ${configFile}";
+        Restart = "on-failure";
         AmbientCapabilities = [ "CAP_NET_BIND_SERVICE" ];
         CapabilityBoundingSet = [ "CAP_NET_BIND_SERVICE" ];
       };
